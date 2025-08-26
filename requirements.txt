@@ -9,3 +9,5 @@ torch
 torchvision
 joblib
 opencv-contrib-python
+google-generativeai
+
