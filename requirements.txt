@@ -8,3 +8,4 @@ nltk
 torch
 torchvision
 joblib
+opencv-contrib-python
