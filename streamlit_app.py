@@ -24,7 +24,6 @@ import nltk
 from nltk.sentiment import SentimentIntensityAnalyzer
 from sklearn.feature_extraction.text import TfidfVectorizer
 import google.generativeai as genai
-
 # Download NLTK resources
 try:
     nltk.data.find('vader_lexicon')
