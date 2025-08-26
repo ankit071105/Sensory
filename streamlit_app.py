@@ -24,6 +24,10 @@ import nltk
 from nltk.sentiment import SentimentIntensityAnalyzer
 from sklearn.feature_extraction.text import TfidfVectorizer
 import google.generativeai as genai
+
+genai.configure(api_key="AIzaSyCUw-D_ayVTIereW_JYQPVtz08JGGPKydA")
+st.set_page_config(page_title="Sensory Overload Navigator", layout="wide")
+
 # Download NLTK resources
 try:
     nltk.data.find('vader_lexicon')
@@ -49,9 +53,9 @@ st.set_page_config(
 st.markdown("""
 <style>
     :root {
-        --primary: #39055e;
+        --primary: #130220;
         --primary-light: #0a364e;
-        --secondary: #261539;
+        --secondary: #1c023a;
         --accent: #ff6b6b;
         --text: #0e0c0c;
         --text-light: #666666;
@@ -61,10 +65,6 @@ st.markdown("""
         --warning: #ffa500;
         --danger: #ff4b4b;
     }
-   body {
-            background-color: #2E003E  !important; /* Dark Purple */
-            color: white; /* Text color */
-        }
         .stApp {
             background-color: #2E003E;
         }
@@ -122,7 +122,6 @@ st.markdown("""
         transform: translateY(-5px);
     }
     .stButton>button {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
         color: white;
         border: none;
         padding: 0.7rem 1.5rem;
@@ -241,13 +240,13 @@ st.markdown("""
 
     /* ===== Global Background & Text ===== */
 .stApp {
-    background-color: #1A0033 !important;   /* Deep Purple */
+        background-color:  #0e0316!important;  /* Deep Purple */
     color: #E6E6FA !important;             /* Light Lavender */
 }
 
 /* Fix background for all containers */
 .main, .block-container, .css-18e3th9, .css-1d391kg {
-    background-color: #1A0033 !important;
+    background-color:  #0e0316!important;
     color: #E6E6FA !important;
 }
 
@@ -260,7 +259,7 @@ h1, h2, h3, h4, h5, h6, p, label, span, div {
 .stTextInput > div > div > input,
 .stPassword > div > div > input,
 textarea {
-    background-color: #2E004F !important;  /* Darker purple */
+    background-color:  #0e0316!important;  /* Darker purple */
     color: #E6E6FA !important;
     border: 1px solid #6A0DAD !important;
     border-radius: 6px;
@@ -274,7 +273,7 @@ textarea::placeholder {
 
 /* ===== Buttons ===== */
 .stButton > button {
-    background-color: #13041e !important; /* Indigo */
+    background: transparent !important;
     color: #FFFFFF !important;
     border-radius: 8px;
     border: 1px solid #E6E6FA !important;
@@ -283,36 +282,33 @@ textarea::placeholder {
 }
 
 .stButton > button:hover {
-    background-color: #1b0c3e !important; /* Brighter Purple */
     color: #FFFFFF !important;
 }
 
 /* ===== Tabs / Radio Buttons ===== */
 .stTabs [role="tablist"] button,
 .stRadio > label {
-    background-color: #2E004F !important;
     color: #E6E6FA !important;
 }
 
 .stTabs [role="tablist"] button[aria-selected="true"] {
-      background-color: #13041e !important;
     color: #FFFFFF !important;
 }
 
 /* ===== Sidebar ===== */
 .css-1d391kg, .css-1lcbmhc, .stSidebar {
-    background-color: #13041e !important;
+    background-color: #130220;
     color: #E6E6FA !important;
 }
 
 /* ===== DataFrames / Tables ===== */
 .stDataFrame, .dataframe {
-    background-color: #2E004F !important;
+    background-color: #130220;
     color: #E6E6FA !important;
 }
 
 .stDataFrame th, .dataframe th {
-    background-color: #13041e !important;
+    background-color: #130220;
     color: #FFFFFF !important;
 }
 
@@ -379,28 +375,38 @@ class AdvancedSensoryNLP:
         
         return features
 
-# Simplified Gemini Chatbot Class
 class SensoryChatbot:
     def __init__(self):
         self.chat_history = []
-        
-    def get_response(self, user_input):
-        if not GEMINI_API_KEY or GEMINI_API_KEY == "AIzaSyCUw-D_ayVTIereW_JYQPVtz08JGGPKydA":
-            return "Please configure your API key to use the chat feature."
-        
+        self.api_key_configured = True  # already configured at import
+
+    def get_response(self, user_input: str) -> str:
+        if not self.api_key_configured:
+            return "Chat features are currently unavailable."
+
         try:
-            # Initialize the model
-            model = genai.GenerativeModel('gemini-2.0-flash')
-            
-            # Create a chat session
-            chat = model.start_chat(history=[])
-            
-            # Generate response
-            response = chat.send_message(user_input)
-            
-            return response.text
+            # ✅ Use latest Gemini model
+            model = genai.GenerativeModel("gemini-2.0-flash")
+
+            # Add user input to history
+            self.chat_history.append({"role": "user", "parts": [user_input]})
+
+            # Generate response with conversation context
+            response = model.generate_content(self.chat_history)
+
+            # Save model reply into history
+            if hasattr(response, "text"):
+                reply = response.text
+            else:
+                reply = "Sorry, I couldn't generate a response."
+
+            self.chat_history.append({"role": "model", "parts": [reply]})
+
+            return reply
+
         except Exception as e:
-            return f"I encountered an error: {str(e)}. Please check your API key and try again."
+            return f"I encountered an error: {str(e)}. Please try again later."
+st.set_page_config(page_title="Sensory Overload Navigator", layout="wide")
 
 # Enhanced Ensemble Model for Sensory Prediction
 class AdvancedSensoryPredictor:
@@ -774,7 +780,6 @@ def get_chat_history(user_id, limit=20):
     result = c.fetchall()
     conn.close()
     return result
-
 # Initialize database
 init_db()
 
@@ -1059,23 +1064,90 @@ def show_environment_analysis():
     st.markdown('</div>', unsafe_allow_html=True)  # Close tab-container
 
 def show_sensory_assistant():
-    st.markdown('<div class="tab-container">', unsafe_allow_html=True)
+    # Custom CSS for better styling
+    st.markdown("""
+    <style>
+    .main .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    .sub-header {
+        color: #4f8bf9;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #4f8bf9;
+        margin-bottom: 1rem;
+    }
+    .chat-container {
+        background-color: #011017;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        height: 400px;
+        overflow-y: auto;
+        border: 1px solid #e6e6e6;
+    }
+    .user-message {
+        background-color: #4f8bf9;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 15px 15px 0 15px;
+        margin: 0.5rem 0;
+        max-width: 80%;
+        margin-left: auto;
+        text-align: right;
+    }
+    .bot-message {
+        background-color: #070111;
+        color: #333;
+        padding: 0.5rem 1rem;
+        border-radius: 15px 15px 15px 0;
+        margin: 0.5rem 0;
+        max-width: 80%;
+    }
+    .suggestion-button {
+        background-color: #f0f2f6;
+        border: 1px solid #4f8bf9;
+        color: #4f8bf9;
+        padding: 0.5rem;
+        border-radius: 8px;
+        margin: 0.25rem 0;
+        width: 100%;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .suggestion-button:hover {
+        background-color: #4f8bf9;
+        color: white;
+    }
+    .stChatInput > div > div > input {
+        border-radius: 20px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
     st.markdown('<h3 class="sub-header">Sensory Assistant</h3>', unsafe_allow_html=True)
     
-    # Display chat interface
-    st.markdown('<div class="chat-container" id="chat-container">', unsafe_allow_html=True)
+    # Initialize chat messages if not exists
+    if 'chat_messages' not in st.session_state:
+        st.session_state.chat_messages = []
     
-    # Display chat messages
-    for msg in st.session_state.chat_messages:
-        if msg['is_user']:
-            st.markdown(f'<div class="user-message">{msg["message"]}</div>', unsafe_allow_html=True)
-        else:
-            st.markdown(f'<div class="bot-message">{msg["message"]}</div>', unsafe_allow_html=True)
+    # Display chat container
+    chat_container = st.container()
     
-    st.markdown('</div>', unsafe_allow_html=True)
+    with chat_container:
+        st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+        
+        # Display chat messages in reverse order (newest at bottom)
+        for msg in st.session_state.chat_messages:
+            if msg['is_user']:
+                st.markdown(f'<div class="user-message">{msg["message"]}</div>', unsafe_allow_html=True)
+            else:
+                st.markdown(f'<div class="bot-message">{msg["message"]}</div>', unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
     
-    # Chat input
-    user_input = st.chat_input("Ask a question about sensory environments or coping strategies...")
+    # Chat input at the bottom
+    user_input = st.chat_input("Ask about sensory environments or coping strategies...")
     
     if user_input:
         # Add user message to chat
@@ -1084,6 +1156,7 @@ def show_sensory_assistant():
         
         # Get bot response
         with st.spinner("Thinking..."):
+            chatbot = SensoryChatbot()
             response = chatbot.get_response(user_input)
             
             # Add bot response to chat
@@ -1093,40 +1166,33 @@ def show_sensory_assistant():
             # Rerun to update the chat display
             st.rerun()
     
-    # Add some suggested questions
-    st.markdown('<div class="feature-card">', unsafe_allow_html=True)
-    st.markdown('<h4 class="section-header">Try asking:</h4>', unsafe_allow_html=True)
+    # Suggested questions in a compact layout
+    st.markdown("### Try asking:")
     
-    col1, col2 = st.columns(2)
+    suggestions = [
+        "What are some coping strategies for loud environments?",
+        "How can I prepare for a visit to a shopping mall?",
+        "What are calming techniques for sensory overload?",
+        "How to create a sensory-friendly workspace?"
+    ]
     
-    with col1:
-        if st.button("What are some coping strategies for loud environments?", use_container_width=True):
-            st.session_state.chat_messages.append({
-                "message": "What are some coping strategies for loud environments?", 
-                "is_user": True
-            })
-            save_chat_message(st.session_state.user_id, "What are some coping strategies for loud environments?", True)
-            
-            response = chatbot.get_response("What are some coping strategies for loud environments?")
-            st.session_state.chat_messages.append({"message": response, "is_user": False})
-            save_chat_message(st.session_state.user_id, response, False)
-            st.rerun()
-    
-    with col2:
-        if st.button("How can I prepare for a visit to a shopping mall?", use_container_width=True):
-            st.session_state.chat_messages.append({
-                "message": "How can I prepare for a visit to a shopping mall?", 
-                "is_user": True
-            })
-            save_chat_message(st.session_state.user_id, "How can I prepare for a visit to a shopping mall?", True)
-            
-            response = chatbot.get_response("How can I prepare for a visit to a shopping mall?")
-            st.session_state.chat_messages.append({"message": response, "is_user": False})
-            save_chat_message(st.session_state.user_id, response, False)
-            st.rerun()
-    
-    st.markdown('</div>', unsafe_allow_html=True)  # Close feature-card
-    st.markdown('</div>', unsafe_allow_html=True)  # Close tab-container
+    cols = st.columns(2)
+    for i, suggestion in enumerate(suggestions):
+        with cols[i % 2]:
+            if st.button(suggestion, key=f"suggestion_{i}", use_container_width=True):
+                st.session_state.chat_messages.append({
+                    "message": suggestion, 
+                    "is_user": True
+                })
+                save_chat_message(st.session_state.user_id, suggestion, True)
+                
+                chatbot = SensoryChatbot()
+                response = chatbot.get_response(suggestion)
+                st.session_state.chat_messages.append({"message": response, "is_user": False})
+                save_chat_message(st.session_state.user_id, response, False)
+                st.rerun()
+
+
 
 def show_profile_settings():
     st.markdown('<div class="tab-container">', unsafe_allow_html=True)
